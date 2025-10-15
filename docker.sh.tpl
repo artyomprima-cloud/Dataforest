@@ -40,11 +40,23 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 echo "/swapfile swap swap defaults 0 0" | sudo tee -a /etc/fstab
 
-git pull git@github.com:artyomprima-cloud/Dataforest.git
-if [ curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name = "nginx" ]; then
-  cd /nginx
+DIR=/home/ubuntu
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+INSTANCE_NAME=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name)
+cd "$DIR" || exit 1
+git clone https://github.com/artyomprima-cloud/Dataforest.git
 
-if [ curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name = "php" ]; then
-  cd /php
+if [ "$INSTANCE_NAME" = "nginx" ]; then
+  cp -r "$DIR"/Dataforest/nginx .
+  rm -rf ./Dataforest
+  cd "$DIR"/nginx || exit 1
+  sed -i "s/PHPFPM_HOST:.*/PHPFPM_HOST: ${private_ip}/" docker-compose.yml
+fi
+
+if [ "$INSTANCE_NAME" = "php" ]; then
+  cp -r "$DIR"/Dataforest/php .
+  rm -rf ./Dataforest
+  cd "$DIR"/php || exit 1
+fi
 
 sudo docker compose up -d

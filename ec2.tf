@@ -9,7 +9,10 @@ module "nginx_instance" {
   subnet_id                   = tolist(module.vpc.public_subnets)[0]
   associate_public_ip_address = true
   security_group_name         = "nginx"
-  user_data                   = file("docker.sh")
+  user_data = templatefile("${path.module}/docker.sh.tpl", {
+    private_ip = module.php_instance.private_ip
+  })
+  metadata_options = { instance_metadata_tags = "enabled" }
   root_block_device = {
     size = 12
   }
@@ -49,6 +52,7 @@ module "php_instance" {
   associate_public_ip_address = true
   security_group_name         = "php"
   user_data                   = file("docker.sh")
+  metadata_options            = { instance_metadata_tags = "enabled" }
   root_block_device = {
     size = 12
   }
@@ -61,11 +65,11 @@ module "php_instance" {
       cidr_ipv4   = "0.0.0.0/0"
     }
     nginx = {
-      description = "Allows port on nginx"
-      from_port   = 9000
-      to_port     = 9000
-      protocol    = "tcp"
-      cidr_ipv4   = module.nginx_instance.security_group_id
+      description                  = "Allows port on nginx"
+      from_port                    = 9000
+      to_port                      = 9000
+      protocol                     = "tcp"
+      referenced_security_group_id = module.nginx_instance.security_group_id
     }
   }
 
