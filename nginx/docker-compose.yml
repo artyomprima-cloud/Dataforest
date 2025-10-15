@@ -7,4 +7,5 @@ services:
       - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
     ports:
       - "80:80"
+    restart: always
 
