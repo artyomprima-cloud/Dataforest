@@ -44,6 +44,8 @@ DIR=/home/ubuntu
 TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 INSTANCE_NAME=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name)
 cd "$DIR" || exit 1
+# A better solution would be downloading artifacts from S3 instead of a git repo, 
+# but this is sufficient for this task and their wasn't criteria that allows me to use S3
 git clone https://github.com/artyomprima-cloud/Dataforest.git
 
 if [ "$INSTANCE_NAME" = "nginx" ]; then

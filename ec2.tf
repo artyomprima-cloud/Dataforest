@@ -1,36 +1,42 @@
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "ami" {
+  description = "Ubuntu 22.04 LTS"
+  type        = string
+  default     = "ami-0a116fa7c861dd5f9"
+}
+
 module "nginx_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
-  name = "nginx"
-
-  instance_type               = "t3.micro"
-  ami                         = "ami-0a116fa7c861dd5f9"
-  key_name                    = aws_key_pair.default.key_name
+  name                        = "nginx"
+  instance_type               = var.instance_type
+  ami                         = var.ami
+  iam_instance_profile        = aws_iam_instance_profile.ssm_profile.name
   subnet_id                   = tolist(module.vpc.public_subnets)[0]
   associate_public_ip_address = true
-  security_group_name         = "nginx"
+  security_group_name         = "nginx-sg"
+
   user_data = templatefile("${path.module}/docker.sh.tpl", {
     private_ip = module.php_instance.private_ip
   })
+
   metadata_options = { instance_metadata_tags = "enabled" }
   root_block_device = {
     size = 12
   }
 
   security_group_ingress_rules = {
-    ssh = {
-      description = "Allow SSH"
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_ipv4   = "0.0.0.0/0"
-    }
     http = {
-      description = "Allow HTTP"
-      from_port   = 80
-      to_port     = 80
-      protocol    = "tcp"
-      cidr_ipv4   = "0.0.0.0/0"
+      description    = "Allow only through cloudfront"
+      from_port      = 80
+      to_port        = 80
+      protocol       = "tcp"
+      prefix_list_id = "pl-a3a144ca"
     }
   }
 
@@ -43,27 +49,18 @@ module "nginx_instance" {
 module "php_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
-  name = "php"
-
-  instance_type               = "t3.micro"
-  ami                         = "ami-0a116fa7c861dd5f9"
-  key_name                    = aws_key_pair.default.key_name
-  subnet_id                   = tolist(module.vpc.public_subnets)[0]
-  associate_public_ip_address = true
-  security_group_name         = "php"
-  user_data                   = file("docker.sh")
-  metadata_options            = { instance_metadata_tags = "enabled" }
+  name                 = "php"
+  instance_type        = var.instance_type
+  ami                  = var.ami
+  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+  subnet_id            = tolist(module.vpc.private_subnets)[0]
+  security_group_name  = "php-sg"
+  user_data            = file("${path.module}/docker.sh.tpl")
+  metadata_options     = { instance_metadata_tags = "enabled" }
   root_block_device = {
     size = 12
   }
   security_group_ingress_rules = {
-    ssh = {
-      description = "Allow SSH"
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_ipv4   = "0.0.0.0/0"
-    }
     nginx = {
       description                  = "Allows port on nginx"
       from_port                    = 9000
@@ -79,24 +76,23 @@ module "php_instance" {
   }
 }
 
-/*module "mysql" {
+module "mysql" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
-  name = "mysql"
-
-  instance_type               = "t3.micro"
-  ami                         = "ami-000d9d5f270bfcd0e"
-  key_name                    = aws_key_pair.default.key_name
-  subnet_id                   = tolist(module.vpc.public_subnets)[0]
-  associate_public_ip_address = true
-  security_group_name         = "php"
+  name                 = "mysql"
+  instance_type        = var.instance_type
+  ami                  = var.ami
+  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+  subnet_id            = tolist(module.vpc.private_subnets)[0]
+  security_group_name  = "mysql-sg"
+  user_data            = file("${path.module}/mysql.sh.tpl")
   security_group_ingress_rules = {
-    ssh = {
-      description = "Allow SSH"
-      from_port   = 80
-      to_port     = 80
-      protocol    = "tcp"
-      cidr_ipv4   = "0.0.0.0/0"
+    mysql = {
+      description                  = "Open MySQL port to PHP"
+      from_port                    = 3306
+      to_port                      = 3306
+      protocol                     = "tcp"
+      referenced_security_group_id = module.php_instance.security_group_id
     }
   }
 
@@ -104,20 +100,29 @@ module "php_instance" {
     Terraform   = "true"
     Environment = "dev"
   }
-}*/
-
-resource "tls_private_key" "RSA" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
 }
 
-resource "aws_key_pair" "default" {
-  key_name   = "demo"
-  public_key = tls_private_key.RSA.public_key_openssh
+resource "aws_iam_role" "ssm_role" {
+  name = "ec2-ssm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Effect = "Allow"
+    }]
+  })
 }
 
-resource "local_file" "private_key" {
-  content         = tls_private_key.RSA.private_key_pem
-  filename        = "${path.module}/demo.pem"
-  file_permission = "0400"
+resource "aws_iam_role_policy_attachment" "ssm_attach" {
+  role       = aws_iam_role.ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "ssm_profile" {
+  name = "ssm-instance-profile"
+  role = aws_iam_role.ssm_role.name
 }

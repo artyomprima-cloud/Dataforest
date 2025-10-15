@@ -1,3 +1,4 @@
+#This is an example of what is inside the docker PHP image when pulling ghcr.io/artyomprima-cloud/php-app:latest 
 FROM php:8.2-cli-alpine AS build
 
 RUN apk add --no-cache \

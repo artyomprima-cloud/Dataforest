@@ -1,4 +1,4 @@
-/*module "cloudfront" {
+module "cloudfront" {
   source = "terraform-aws-modules/cloudfront/aws"
 
   origin = [
@@ -23,4 +23,8 @@
 
   enabled = true
 }
-*/
+
+output "domain_name_uri" {
+  description = "Private IP address of the EC2 instance"
+  value       = "${module.cloudfront.cloudfront_distribution_domain_name}/index.php"
+}

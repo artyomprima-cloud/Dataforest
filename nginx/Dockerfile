@@ -1,3 +1,4 @@
+#This is an example of what is inside the docker Nginx image when pulling ghcr.io/artyomprima-cloud/nginx:latest 
 FROM nginx:1.29.1
 
 RUN apt-get update && apt-get install -y gettext && rm -rf /var/lib/apt/lists/*
