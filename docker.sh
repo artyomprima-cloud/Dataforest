@@ -5,7 +5,11 @@ sudo apt-get update -y
 sudo apt-get upgrade -y
 
 # Install Git
-sudo apt-get install -y git
+sudo apt-get install -y git	
+
+sudo apt-get install -y amazon-ssm-agent
+sudo systemctl enable amazon-ssm-agent
+sudo systemctl start amazon-ssm-agent
 
 # Install Docker
 sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
@@ -35,3 +39,12 @@ sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 echo "/swapfile swap swap defaults 0 0" | sudo tee -a /etc/fstab
+
+git pull git@github.com:artyomprima-cloud/Dataforest.git
+if [ curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name = "nginx" ]; then
+  cd /nginx
+
+if [ curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name = "php" ]; then
+  cd /php
+
+sudo docker compose up -d

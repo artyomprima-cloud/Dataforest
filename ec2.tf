@@ -1,15 +1,7 @@
-locals {
-  security_group_ssh = {
-    cidr_ipv4 = "0.0.0.0"
-    from_port = 22
-    to_port   = 22
-  }
-}
-
 module "nginx_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
-  name = "Nginx"
+  name = "nginx"
 
   instance_type               = "t3.micro"
   ami                         = "ami-0a116fa7c861dd5f9"
@@ -18,11 +10,22 @@ module "nginx_instance" {
   associate_public_ip_address = true
   security_group_name         = "nginx"
   user_data                   = file("docker.sh")
+  root_block_device = {
+    size = 12
+  }
+
   security_group_ingress_rules = {
     ssh = {
       description = "Allow SSH"
       from_port   = 22
       to_port     = 22
+      protocol    = "tcp"
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+    http = {
+      description = "Allow HTTP"
+      from_port   = 80
+      to_port     = 80
       protocol    = "tcp"
       cidr_ipv4   = "0.0.0.0/0"
     }
@@ -34,16 +37,21 @@ module "nginx_instance" {
   }
 }
 
-/*module "php_instance" {
+module "php_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
   name = "php"
 
   instance_type               = "t3.micro"
+  ami                         = "ami-0a116fa7c861dd5f9"
   key_name                    = aws_key_pair.default.key_name
   subnet_id                   = tolist(module.vpc.public_subnets)[0]
   associate_public_ip_address = true
   security_group_name         = "php"
+  user_data                   = file("docker.sh")
+  root_block_device = {
+    size = 12
+  }
   security_group_ingress_rules = {
     ssh = {
       description = "Allow SSH"
@@ -52,13 +60,20 @@ module "nginx_instance" {
       protocol    = "tcp"
       cidr_ipv4   = "0.0.0.0/0"
     }
+    nginx = {
+      description = "Allows port on nginx"
+      from_port   = 9000
+      to_port     = 9000
+      protocol    = "tcp"
+      cidr_ipv4   = module.nginx_instance.security_group_id
+    }
   }
 
   tags = {
     Terraform   = "true"
     Environment = "dev"
   }
-}*/
+}
 
 /*module "mysql" {
   source = "terraform-aws-modules/ec2-instance/aws"

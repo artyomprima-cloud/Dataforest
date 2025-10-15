@@ -1,15 +1,10 @@
 services:
   nginx:
-    image: nginx:local
+    image: ghcr.io/artyomprima-cloud/nginx:latest
     environment:
-      PHPFPM_HOST: php
+      PHPFPM_HOST: php #private ip address of php this can be done inside an init script
     volumes:
       - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
     ports:
-      - "8080:80"
-    networks:
-      - app-network
-networks:
-  app-network:
-    driver: bridge
+      - "80:80"
 

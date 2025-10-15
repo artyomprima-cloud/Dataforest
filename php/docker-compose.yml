@@ -1,0 +1,7 @@
+services:
+  php:
+    image: ghcr.io/artyomprima-cloud/php-app:latest 
+    volumes:
+      - ./app:/var/www/html
+    command: php-fpm
+
