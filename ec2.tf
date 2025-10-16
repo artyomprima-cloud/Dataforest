@@ -31,10 +31,8 @@ module "nginx_instance" {
     private_ip = module.php_instance.private_ip
   })
 
-  metadata_options = { instance_metadata_tags = "enabled" }
-  root_block_device = {
-    size = 12
-  }
+  metadata_options  = { instance_metadata_tags = "enabled" }
+  root_block_device = { size = 12 }
 
   security_group_ingress_rules = {
     http = {
@@ -61,9 +59,7 @@ module "php_instance" {
   security_group_name  = "${var.environment}-php-sg"
   user_data            = file("${path.module}/docker.sh.tpl")
   metadata_options     = { instance_metadata_tags = "enabled" }
-  root_block_device = {
-    size = 12
-  }
+  root_block_device    = { size = 12 }
   security_group_ingress_rules = {
     nginx = {
       description                  = "Allows port on nginx"
