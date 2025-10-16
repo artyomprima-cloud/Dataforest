@@ -27,7 +27,7 @@ module "nginx_instance" {
   associate_public_ip_address = true
   security_group_name         = "${var.environment}-nginx-sg"
 
-  user_data = templatefile("${path.module}/docker.sh.tpl", {
+  user_data = templatefile("${path.module}/templates/docker.sh.tpl", {
     private_ip = module.php_instance.private_ip
   })
 
@@ -57,7 +57,7 @@ module "php_instance" {
   subnet_id            = tolist(module.vpc.private_subnets)[0]
   private_ip           = var.php_private_ip
   security_group_name  = "${var.environment}-php-sg"
-  user_data            = file("${path.module}/docker.sh.tpl")
+  user_data            = file("${path.module}/templates/docker.sh.tpl")
   metadata_options     = { instance_metadata_tags = "enabled" }
   root_block_device    = { size = 12 }
   security_group_ingress_rules = {
@@ -82,7 +82,7 @@ module "mysql" {
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
   subnet_id            = tolist(module.vpc.private_subnets)[0]
   security_group_name  = "${var.environment}-mysql-sg"
-  user_data            = file("${path.module}/mysql.sh.tpl")
+  user_data            = file("${path.module}/templates/mysql.sh.tpl")
   security_group_ingress_rules = {
     mysql = {
       description                  = "Open MySQL port to PHP"
