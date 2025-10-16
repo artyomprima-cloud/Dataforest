@@ -1,5 +1,6 @@
 # Php, Nginx, and Mysql application
-A webpage that displays a simple php.info.
+A webpage that displays a simple php.info. 
+Tested with Terraform v1.13.3
 
 ## HLD (High Level Diagram)
 ![HLD](/images/HLD.png)

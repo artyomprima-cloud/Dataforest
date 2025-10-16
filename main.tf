@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket       = "apryma-playground-tf-state-bucket"
+    bucket       = [YOUR-S3-TF-BUCKET]
     key          = "terraform.tfstate"
     region       = "eu-central-1"
     encrypt      = true

@@ -10,16 +10,22 @@ variable "ami" {
   default     = "ami-0a116fa7c861dd5f9"
 }
 
+variable "php_private_ip" {
+  type        = string
+  description = "Static private IP for PHP instance"
+  default     = "10.0.1.100"
+}
+
 module "nginx_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
-  name                        = "nginx"
+  name                        = "${var.environment}-nginx"
   instance_type               = var.instance_type
   ami                         = var.ami
   iam_instance_profile        = aws_iam_instance_profile.ssm_profile.name
   subnet_id                   = tolist(module.vpc.public_subnets)[0]
   associate_public_ip_address = true
-  security_group_name         = "nginx-sg"
+  security_group_name         = "${var.environment}-nginx-sg"
 
   user_data = templatefile("${path.module}/docker.sh.tpl", {
     private_ip = module.php_instance.private_ip
@@ -40,21 +46,19 @@ module "nginx_instance" {
     }
   }
 
-  tags = {
-    Terraform   = "true"
-    Environment = "dev"
-  }
+  tags = var.tags
 }
 
 module "php_instance" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
-  name                 = "php"
+  name                 = "${var.environment}-php"
   instance_type        = var.instance_type
   ami                  = var.ami
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
   subnet_id            = tolist(module.vpc.private_subnets)[0]
-  security_group_name  = "php-sg"
+  private_ip           = var.php_private_ip
+  security_group_name  = "${var.environment}-php-sg"
   user_data            = file("${path.module}/docker.sh.tpl")
   metadata_options     = { instance_metadata_tags = "enabled" }
   root_block_device = {
@@ -70,21 +74,18 @@ module "php_instance" {
     }
   }
 
-  tags = {
-    Terraform   = "true"
-    Environment = "dev"
-  }
+  tags = var.tags
 }
 
 module "mysql" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
-  name                 = "mysql"
+  name                 = "${var.environment}-mysql"
   instance_type        = var.instance_type
   ami                  = var.ami
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
   subnet_id            = tolist(module.vpc.private_subnets)[0]
-  security_group_name  = "mysql-sg"
+  security_group_name  = "${var.environment}-mysql-sg"
   user_data            = file("${path.module}/mysql.sh.tpl")
   security_group_ingress_rules = {
     mysql = {
@@ -96,10 +97,7 @@ module "mysql" {
     }
   }
 
-  tags = {
-    Terraform   = "true"
-    Environment = "dev"
-  }
+  tags = var.tags
 }
 
 resource "aws_iam_role" "ssm_role" {

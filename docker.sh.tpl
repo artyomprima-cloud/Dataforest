@@ -48,14 +48,14 @@ cd "$DIR" || exit 1
 # but this is sufficient for this task and their wasn't criteria that allows me to use S3
 git clone https://github.com/artyomprima-cloud/Dataforest.git
 
-if [ "$INSTANCE_NAME" = "nginx" ]; then
+if echo "$INSTANCE_NAME" | grep -q "nginx"; then
   cp -r "$DIR"/Dataforest/nginx .
   rm -rf ./Dataforest
   cd "$DIR"/nginx || exit 1
   sed -i "s/PHPFPM_HOST:.*/PHPFPM_HOST: ${private_ip}/" docker-compose.yml
 fi
 
-if [ "$INSTANCE_NAME" = "php" ]; then
+if echo "$INSTANCE_NAME" | grep -q "php"; then
   cp -r "$DIR"/Dataforest/php .
   rm -rf ./Dataforest
   cd "$DIR"/php || exit 1
