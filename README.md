@@ -6,7 +6,7 @@ Tested with Terraform v1.13.3
 ![HLD](/images/HLD.png)
 
 ## Installation
-Before installation, make sure to include in main.tf where you will store terraform state in your new s3 bucket.
+Before installation, make sure to create an S3 bucket to store terraform state so you can include in your main.tf
 
 <pre>
 git clone https://github.com/artyomprima-cloud/Dataforest.git
